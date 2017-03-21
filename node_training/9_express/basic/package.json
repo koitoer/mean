@@ -1,0 +1,18 @@
+{
+  "name": "node-express-app",
+  "version": "1.0.0",
+  "description": "NodeJS and Express",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "koitoer",
+  "license": "ISC",
+  "dependencies": {
+    "ejs": "^2.5.6",
+    "express": "^4.15.2"
+  },
+  "devDependencies": {
+    "body-parser": "^1.17.1"
+  }
+}
