@@ -1,7 +1,10 @@
 "use strict";
 
 //npm i -g gulp-cli
+//npm i -g live-server
 //gulp watch:scripts
+//npm run nodemon build/example_00
+//live-server public
 var gulp = require("gulp"),
 	$ = require("gulp-load-plugins")(),
 	source = require("vinyl-source-stream"),
