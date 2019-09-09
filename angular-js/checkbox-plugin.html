@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html ng-app="exampleApp">
+	<head>
+		<title>Forms</title>
+		<script src="https://code.jquery.com/jquery-1.11.2.min.js"></script>
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css">
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap-theme.min.css">
+		<link rel="stylesheet" href="https://code.jquery.com/ui/1.11.4/themes/smoothness/jquery-ui.css">
+		<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/js/bootstrap.min.js"></script>
+		<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.3.14/angular.min.js"></script>
+		<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.3.14/angular-mocks.js"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/angular-ui-bootstrap/0.13.0/ui-bootstrap.min.js"> </script>
+		<script src="https://angular-ui.github.io/bootstrap/ui-bootstrap-tpls-0.13.0.js"></script>
+		<script src="https://code.jquery.com/ui/1.11.3/jquery-ui.min.js"></script>
+  </head>
+		
+		<style>
+
+		</style>
+
+		<script>
+			var app = angular.module("exampleApp", ['ui.bootstrap', 'ngMockE2E']).controller("defaultCtrl", function ($scope, $http, $rootScope) {
+
+				$scope.initialForm = {};
+				
+				$http.get('http://localhost:8080/pricemart/bidLog/getHeaders').success(function(data, status, headers, config) {
+					$scope.initialForm = data;
+				});	
+	
+				
+				$scope.clearFilters = function clearFilters(){
+					$scope.requestForm = {
+						submitDate : [],
+						inititialBidReviewDate : [],
+						finalBidComplDate : [],
+						skuCount : [],
+						annualVolume : [],
+						status : [],
+						requestType : []
+					};
+				};
+				
+				$scope.searchFunction = function searchFunction(){
+					$http.post('http://localhost:8080/pricemart/bidLog/search', $scope.requestForm )
+						.success(function(data, status, headers, config) {
+							
+							$rootScope.$broadcast("searchDone", {});
+							
+						});	
+				}
+				
+
+ 
+			});
+			
+			
+			app.directive("checkboxList", function(){
+			  return{
+			      	restrict: 'A',
+					
+    					scope : {
+    						field : '='
+    					},
+    					
+    					link: function (scope, elem, attrs) {
+    					  
+    					  scope.$watch('field', function(newValue, oldValue){
+    					    if(newValue.length == 0 && oldValue.length != 0 ){
+    					      var childs = elem.children();
+								for (var i = 1; i < childs.length ; i++){
+								  var label = childs[i].childNodes;
+									var currentCheckbox = angular.element(io[1]);
+									currentCheckbox.removeAttr('checked');
+								}
+    					      
+    					    }
+    					  });
+    					  
+    					},
+    					
+    					
+    					controller: function($scope){
+							this.getModel = function() {
+								return $scope.field;
+							}
+    					}
+				}
+			});
+			
+			
+			app.directive("checkboxItem", function(){
+			  
+			  return{
+				restrict: 'A',
+				require: '^checkboxList',
+				scope : true,
+          
+				link: function (scope, elem, attrs, ctrl) {
+						elem.on("change", function (e){
+						  
+						  var valueChecked = attrs.checkboxItem;
+						  var scopedArray = ctrl.getModel();  
+						  if(elem.is(':checked')){
+							scopedArray.push(valueChecked)
+						  }else{
+							scopedArray.splice(scopedArray.indexOf(valueChecked), 1); 
+						  }
+						  
+						  scope.$apply(); 
+						});
+					}
+				}
+			  
+			});
+			
+			app.directive("searchLayout", function ($http, $compile, $rootScope) {
+				return{
+				    
+					restrict: 'A',
+					
+					scope : {
+						items : '=',
+						origin : '='
+					},
+					
+					link: function (scope, elem, attrs) {
+						
+						scope.$on("searchDone", function (event, args) {
+					
+							elem.html("");
+							elem.append("<div>");
+							angular.forEach(scope.items, function(value, key, obj) {
+								
+								var divID = angular.element(document.getElementById('search-trail'));
+								var buttonElement = $compile("<button class='btn btn-default'>X</button>")(scope);
+								
+								buttonElement.on("click", function (e) {
+									scope.items[key] = [];
+									scope.$apply();
+									$rootScope.$broadcast("searchDone", {});
+								});
+								
+								//Verify if is array and dont contain nothing
+								if(angular.isArray(scope.items[key])){
+									if(scope.items[key].length > 0){
+										elem.append(key + ': ' + value);
+										divID.append(buttonElement);
+									}
+								}else{
+									elem.append(key + ': ' + value);
+									divID.append(buttonElement);
+								}
+
+							});
+							elem.append("</div>");
+						});
+						
+					}
+				}
+			});
+			
+			
+			/** Adding mock responses */
+			app.run(function($httpBackend) {
+			
+					
+				 $httpBackend.whenGET('http://localhost:8080/pricemart/bidLog/getHeaders').respond(function(method, url, data) {
+					var statusForBid = 
+							{
+								"bidNo": [ 1, 2, 3],
+								"status": ["status1","status2","status3"],
+								"requestType": ["requestType1", "requestType2", "requestType3"],
+								"assignedTo": ["assignedTo1", "assignedTo2", "assignedTo3"],
+								"salesRep": [ "salesRep1", "salesRep2", "salesRep3" ],
+								"customerName": ["customerName1","customerName2","customerName3"],
+								"pilot": ["pilot1","pilot2","pilot3"],
+								"programType": ["programType1","programType2","programType3"],
+							};
+					return [200, statusForBid, {}];
+				 });
+				 
+				 $httpBackend.whenPOST('http://localhost:8080/pricemart/bidLog/search').respond(function(method, url, data){
+					console.log("Filter received in the SERVER side " + angular.toJson(data));
+					return [200];
+				 });
+				 
+			});
+		</script>
+		
+	</head>
+
+	<body ng-controller="defaultCtrl" ng-init="clearFilters()">							
+		
+		<div id="todoPanel" class="panel" >
+		
+		  <h2>Checkboxes</h2>
+			
+			<form>
+				
+				
+				<div checkbox-list field="requestForm.status">
+				  <span>Status:</span>
+				  <div ng-repeat=" (key, status) in initialForm.status" class="checkbox-inline">
+						<input checkbox-item="{{status}}" type="checkbox" value="{{status}}"  /> 
+							{{status}}
+				  </div>
+				</div>
+				
+				
+			
+				<div checkbox-list field="requestForm.requestType">
+				  <span>Request Type:</span>
+				  <label ng-repeat="(key, status) in initialForm.requestType" class="checkbox-inline">
+						<input checkbox-item="{{status}}" type="checkbox" value="{{status}}" > 
+							{{status}}
+				  </label>
+				</div>
+	
+				
+			</form>
+		</div>
+		
+		
+		<div>
+			<button type="button" class="btn btn-primary" ng-click="searchFunction()">
+				Search
+			</button>
+			<button type="button" class="btn btn-primary" ng-click="clearFilters()">
+				Clear Filters
+			</button>
+		</div>
+		
+		<br><h4> Search Layout </h4>
+		<div id="search-trail" data-search-layout items="requestForm" origin="initialForm" >
+			Elements:
+		</div>
+		
+		<br><h4> Request Form </h4>
+		{{requestForm}}
+		
+		<br><h4> Initial Form </h4>
+		{{initialForm}}
+		<br>
+
+		
+		
+	</body>
+</html>
+

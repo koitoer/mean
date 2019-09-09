@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html ng-app="exampleApp">
+		<head>
+		<title>Services and Modules</title>
+		<script src="angular.js"></script>
+		<link href="bootstrap.css" rel="stylesheet" />
+		<link href="bootstrap-theme.css" rel="stylesheet" />
+		<script>
+		
+	
+			
+		
+			angular.module("exampleApp", ["customServices", "customServices2", "customServices3"])
+			.config(function (logService3Provider) {
+				logService3Provider.debugEnabled(true).messageCounterEnabled(false);
+			})
+			.controller("defaultCtrl", function ($scope, logService, logService2, logService3) {
+				$scope.data = {
+					cities: ["London", "New York", "Paris"],
+					totalClicks: 0
+				};
+				
+				$scope.$watch('data.totalClicks', function (newVal) {
+					logService.log("Total click count: " + newVal);
+					logService2.log(" Message ");
+					logService3.log("Comming from provider");
+				});
+			})
+			.directive("triButton", function (logService) {
+				return {
+					scope: { counter: "=counter" },
+					link: function (scope, element, attrs) {
+						element.on("click", function (event) {
+						logService.log("Button click: " + event.target.innerText);
+						scope.$apply(function () {
+							scope.counter++;
+						});
+					});
+				}
+			}
+			});
+			
+			angular.module("customServices", []).factory("logService", function () {
+				
+				var messageCount = 0;
+				return {
+					log: function (msg) {
+						console.log("(LOG + " + messageCount++ + ") " + msg);
+					}
+				};
+			});
+		
+			
+			var baseLogger = function () {
+				this.messageCount = 0;
+				this.log = function (msg) {
+					console.log(this.msgType + ": " + (this.messageCount++) + " " + msg);
+				}
+			};
+
+			var debugLogger = function () { };
+			debugLogger.prototype = new baseLogger();
+			debugLogger.prototype.msgType = "Debug";
+			
+			var errorLogger = function () { };
+			errorLogger.prototype = new baseLogger();
+			errorLogger.prototype.msgType = "Error";
+
+			angular.module("customServices2", [])
+				.service("logService2", debugLogger)
+				.service("errorService", errorLogger);
+			  
+			angular.module("customServices3", []).provider("logService3", function () {
+
+				var counter = true;
+				var debug = true;
+				return {
+					messageCounterEnabled: function (setting) {
+						if (angular.isDefined(setting)) {
+							counter = setting;
+							return this;
+						} else {
+							return counter;
+						}
+					},
+					
+					debugEnabled: function(setting) {
+						if (angular.isDefined(setting)) {
+							debug = setting;
+							return this;
+						} else {
+							return debug;
+						}
+					},
+					
+					$get: function () {
+						return {
+							messageCount: 0,
+							
+							log: function (msg) {
+								if (debug) {
+									console.log("(LOG" + (counter ? " + " + this.messageCount++ + ") " : ") ") + msg);
+								}
+							}
+						};
+					}
+				}
+			});
+			 
+			 
+		</script>
+	</head>
+	
+	<body ng-controller="defaultCtrl">
+	<div class="well">
+		<div class="btn-group" tri-button counter="data.totalClicks" source="data.cities">
+			<button class="btn btn-default" ng-repeat="city in data.cities">
+				{{city}}
+			</button>
+		</div>
+		<h5>Total Clicks: {{data.totalClicks}}</h5>
+	</div>
+	</body>
+</html>

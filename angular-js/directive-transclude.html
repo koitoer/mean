@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html ng-app="exampleApp">
+	<head>
+		<title>Transclusion</title>
+		
+		<script src="https://code.jquery.com/jquery-1.11.2.min.js"></script>
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css">
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap-theme.min.css">
+		<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/js/bootstrap.min.js"></script>
+		<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.3.14/angular.min.js"></script>
+		
+		<script type="text/ng-template" id="template">
+			<div class="panel panel-default">
+				<div class="panel-heading">
+					<h4>This is the panel</h4>
+				</div>
+				<div class="panel-body" ng-transclude>
+				
+				</div>
+			</div>
+		</script>
+		
+		<script type="text/javascript">
+			var app = angular.module("exampleApp", []).directive("panel", function () {
+			
+				return {
+				
+					link: function (scope, element, attrs) {
+						scope.dataSource = "directive";
+					},
+						
+					restrict: "E",
+					
+					scope: true, //true use controller, false use directive
+					
+					template: function () {
+						return angular.element(
+							document.querySelector("#template")).html();
+						},
+					
+					transclude: true
+				}
+			});
+			
+			app.controller("defaultCtrl", function ($scope) {
+				$scope.dataSource = "controller";
+			});
+			
+		</script>
+	</head>
+	
+	<body ng-controller="defaultCtrl">
+		<panel>
+			<!--the transclusion feature, which is that expressions in the transcluded
+					content are evaluated in the controller’s scope, not the scope of the directive -->
+			The data value comes from the: {{dataSource}}
+		</panel>
+	</body>
+</html>

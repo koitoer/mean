@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html ng-app="exampleApp">
+	<head>
+		<title>Forms</title>
+		<script src="https://code.jquery.com/jquery-1.11.2.min.js"></script>
+		<script src="https://code.jquery.com/ui/1.11.3/jquery-ui.min.js"></script>
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css">
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap-theme.min.css">
+		<link rel="stylesheet" href="https://code.jquery.com/ui/1.11.3/themes/smoothness/jquery-ui.css">
+		<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/js/bootstrap.min.js"></script>
+		<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.3.14/angular.min.js"></script>
+		<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.3.14/angular-mocks.js"></script>
+		
+		<style>
+			.myClass {
+				-webkit-transition: all 0.30s ease-in-out;
+				  -moz-transition: all 0.30s ease-in-out;
+				  -ms-transition: all 0.30s ease-in-out;
+				  -o-transition: all 0.30s ease-in-out;
+				  outline: none;
+				  padding: 3px 0px 3px 3px;
+				  margin: 5px 1px 3px 0px;
+				   border: 1px solid rgba(255, 0, 0, 0.8);
+			}
+			</style>
+
+		<script>
+		$( document ).ready(function() {
+			$('table').on('focus',".datepicker_editable", function(){
+				$(this).datepicker({
+					minDate: "-24m",
+					maxDate: "+0d",
+					changeMonth: true,
+					changeYear: true
+				});
+			});
+		});
+		
+		
+		</script>	
+			
+		<script>
+			var app = angular.module("exampleApp", ['ngMockE2E']).controller("defaultCtrl", function ($scope) {
+
+			$scope.data = [
+					{id : 0, name : "Mauricio1", nick : "koitoer", description : "desc1", nick2 : "reotiok", date :  "01/01/2015"},
+					{id : 1, name : "Mauricio", nick : "shipto", description : "desc1", nick2 : "reotipk", date :  "01/02/2015"}
+				 ];
+				 
+			}).directive("editableRow", function ($http) {
+				return{
+				    
+					restrict: 'A',
+					
+					scope : {
+						item : '='
+					},
+					
+					link: function (scope, elem, attrs) {
+						
+						var editButton = angular.element(elem[0].querySelector('.edit-button'));
+						var cancelButton = angular.element(elem[0].querySelector('.cancel-button'));
+						var saveButton = angular.element(elem[0].querySelector('.save-button'));
+						
+						
+						/**
+						* Code for Edit feature, will change the DOM for editable components.
+						*/
+						editButton.on("click", function (e) {
+						
+							console.log("Initial state on click event: " + angular.toJson(scope.item));
+							
+							var childs = elem.children();
+							for (var i = 1; i < childs.length - 1; i++){
+							
+								var keyCode = angular.element(childs[i]).attr("e-value");
+								var currentTr = angular.element(childs[i]);
+								
+								
+								if(currentTr.hasClass("editable-text") || currentTr.hasClass("editable-textArea") || currentTr.hasClass("editable-calendar") ){
+									angular.element(currentTr).children().addClass("hidden");
+									var value = scope.item[keyCode.trim()];
+								}
+							
+								 if(angular.element(childs[i]).hasClass("editable-text")){
+									angular.element(childs[i]).append('<input type="text" value="'+value+'" />');
+								 }
+								
+								if(angular.element(childs[i]).hasClass("editable-textArea")){
+									angular.element(childs[i]).append('<textarea rows="4" cols="50"> '+value+'</textarea>');
+								 }
+								 
+								if(angular.element(childs[i]).hasClass("editable-calendar")){
+									angular.element(childs[i]).append('<input type="text" class = "datepicker_editable" value="'+value+'" />');
+								}
+							}
+							
+							buttonBehavior();
+						});
+						
+						
+						/**
+						* Code for Cancel feature, will change the DOM for editable components removing them
+						*/
+						cancelButton.on("click", function (e) {
+						
+							var childs = elem.children();
+							for (var i = 1; i < childs.length - 1; i++){
+							
+								var currentTr = angular.element(childs[i]);
+								
+								 if(currentTr.hasClass("editable-text") || currentTr.hasClass("editable-textArea") || currentTr.hasClass("editable-calendar")){
+									angular.element(currentTr.children()).toggleClass("hidden");
+									angular.element(currentTr.children()[1]).remove();
+								 }
+					
+							}
+							
+								buttonBehavior();
+						});
+						
+						
+						/**
+						* Code for Save feature, update the model and create ajax call
+						*/
+						saveButton.on("click", function (e) {
+						
+							var childs = elem.children();
+							var detectedField = 0; var validFields = 0;
+							
+							/** Check if all the fields are valid **/
+							for (var i = 1; i < childs.length - 1; i++){
+							
+								var currentTr = angular.element(childs[i]);
+						
+								if(currentTr.hasClass("editable-text") || currentTr.hasClass("editable-textArea") || currentTr.hasClass("editable-calendar")){
+									
+									detectedField++;
+									var regexExp = new RegExp(currentTr.attr("e-regex"));
+									var newValue = currentTr.children()[1].value;
+									var passRegex =  regexExp.test(newValue);
+									
+									console.log(regexExp+ " : " + newValue + " : " +  regexExp.test(newValue));
+
+									if(passRegex){
+										validFields++;
+										angular.element(currentTr.children()[1]).removeClass("myClass");
+									}else{
+										angular.element(currentTr.children()[1]).addClass("myClass");
+									}
+								}
+								
+							}	
+								
+							
+			
+							
+							if(validFields == detectedField){
+							
+								var currentScopeItem = angular.copy(scope.item);
+							
+								for (var i = 1; i < childs.length - 1; i++){
+									var currentTr = angular.element(childs[i]);
+									
+									if(currentTr.hasClass("editable-text") || currentTr.hasClass("editable-textArea") || currentTr.hasClass("editable-calendar")){
+										currentTr.children().toggleClass("hidden");
+										var keyCode = currentTr.attr("e-value");
+										var newValue = currentTr.children()[1].value;
+										//console.log("Index : " + i + " -> " + keyCode + " : " + newValue);
+										scope.item[keyCode.trim()] =  newValue;
+										//scope.$apply();
+										currentTr.children()[1].remove();
+									}
+								}
+							
+							
+								/** Call the services to update the reference */
+								var urlToUpdate = attrs["url"];
+								$http.put(urlToUpdate, scope.item).
+									  success(function(data, status, headers, config) {
+										console.log("Sending to process : " + angular.toJson(scope.item));
+									  }).
+									  error(function(data, status, headers, config) {
+										console.log("Error on sent process : " + angular.toJson(scope.item));
+										scope.item = currentScopeItem;
+									  });
+  
+								buttonBehavior();
+							}
+								
+							
+						});
+						
+						function buttonBehavior() {
+							editButton.toggleClass("hidden");
+							cancelButton.toggleClass("hidden");
+							saveButton.toggleClass("hidden");
+						}
+						
+					}
+				}
+			});
+			
+			
+			/** Adding mock responses */
+			app.run(function($httpBackend) {
+				 $httpBackend.whenPUT('http://localhost:8080/person').respond(function(method, url, data) {
+					var person = angular.fromJson(data);
+					console.log("This is received by the service " + angular.toJson(person));
+					return [200];
+				 });
+			});
+		</script>
+	</head>
+
+	<body ng-controller="defaultCtrl">
+		<div id="todoPanel" class="panel" >
+			
+		<table class="table">
+		  <thead>
+			   <tr>
+					<th>Index</th>
+					<th>Name</th>
+					<th>NickName</th>
+					<th>Description</th>
+					<th>NickName2</th>
+					<th>Date</th>
+					<th>edit</th>
+					<th>save</th>
+			   </tr>
+		  </thead>	 
+		  <tbody>
+			   <tr editable-row ng-repeat = "person in data" item ="person" url="http://localhost:8080/person">
+					<td>{{$index}}</td>
+					<td>{{person.name}}</td>
+					<td class = "editable-text" e-value="nick" e-regex="[a-zA-Z]+$"><span ng-bind="person.nick"></span></td>
+					<td class = "editable-textArea" e-value="description" e-regex=""><span ng-bind="person.description"></span></td>
+					<td class = "editable-text" e-value="nick2" e-regex="[0-9]+$"><span>{{person.nick2}}</span></td>
+					<td class = "editable-calendar" e-value="date" ><span>{{person.date}}</span></td>
+					<td>
+						<button type="button" class="btn btn-primary edit-button" >Edit</button>
+						<button type="button" class="btn btn-success save-button hidden">Save</button>
+					</td>
+					<td>
+						<button type="button" class="btn btn-danger cancel-button hidden">Cancel</button>
+					</td>
+				</tr>
+		  </tbody>
+		</table>
+		</div>
+		
+		{{data}}
+		
+		<div id="todoPanel" class="panel">
+			<table class="table">
+		  <thead>
+			   <tr>
+					<th>Index</th>
+					<th>Name</th>
+					<th>NickName</th>
+					<th>Description</th>
+					<th>NickName2</th>
+					<th>Date</th>
+					<th>edit</th>
+					<th>save</th>
+			   </tr>
+		  </thead>	 
+		  <tbody>
+			   <tr editable-row ng-repeat = "person in data" item ="person" url="http://localhost:8080/person">
+					<td>{{$index}}</td>
+					<td>{{person.name}}</td>
+					<td class = "editable-text" e-value="nick" e-regex="[a-zA-Z]+$"><span ng-bind="person.nick"></span></td>
+					<td class = "editable-textArea" e-value="description" e-regex=""><span ng-bind="person.description"></span></td>
+					<td class = "editable-text" e-value="nick2" e-regex="[0-9]+$"><span>{{person.nick2}}</span></td>
+					<td class = "editable-calendar" e-value="date" ><span>{{person.date}}</span></td>
+					<td>
+						<button type="button" class="btn btn-primary edit-button" >Edit</button>
+						<button type="button" class="btn btn-success save-button hidden">Save</button>
+					</td>
+					<td>
+						
+						<button type="button" class="btn btn-danger cancel-button hidden">Cancel</button>
+					</td>
+				</tr>
+		  </tbody>
+		</table>
+		</div>
+
+	</body>
+</html>

@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html ng-app="exampleApp">
+	<head>
+		<title>Forms</title>
+		<script src="https://code.jquery.com/jquery-1.11.2.min.js"></script>
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css">
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap-theme.min.css">
+		<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/js/bootstrap.min.js"></script>
+		<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.3.14/angular.min.js"></script>
+		<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.3.14/angular-mocks.js"></script>
+		
+		<style>
+			.myClass {
+				-webkit-transition: all 0.30s ease-in-out;
+				  -moz-transition: all 0.30s ease-in-out;
+				  -ms-transition: all 0.30s ease-in-out;
+				  -o-transition: all 0.30s ease-in-out;
+				  outline: none;
+				  padding: 3px 0px 3px 3px;
+				  margin: 5px 1px 3px 0px;
+				   border: 1px solid rgba(255, 0, 0, 0.8);
+			}
+			</style>
+
+		<script>
+			var app = angular.module("exampleApp", ['ngMockE2E']).controller("defaultCtrl", function ($scope, $http) {
+
+				 $scope.filterName = {};
+				 
+				$scope.data = [
+						{id : 0, name : "Mauricio1", nick : "koitoer", description : "desc1", nick2 : "reotiok"},
+						{id : 1, name : "Mauricio1", nick : "shipto", description : "desc1", nick2 : "reotipk"},
+						{id : 2, name : "Mauricio", nick : "shipto", description : "desc1", nick2 : "reotipk"},
+						{id : 3, name : "Mauricio", nick : "shipto", description : "desc1", nick2 : "reotipk"},
+						{id : 4, name : "Mauricio", nick : "shipto", description : "desc1", nick2 : "reotipk"},
+						{id : 5, name : "David", nick : "shipto", description : "desc1", nick2 : "reotipk"},
+						{id : 6, name : "Mauricio", nick : "shipto", description : "desc1", nick2 : "reotipk"},
+						{id : 7, name : "Alex", nick : "shipto", description : "desc1", nick2 : "reotipk"}
+					 ];
+					 
+				$http.get('http://localhost:8080/person').success(function(data, status, headers, config) {
+					$scope.nameHeaderValues = data;
+				});				
+				
+			}).filter("selectedCustomName", function($filter){
+				
+				return function(data, fil){
+					var subSetData = [];
+					var internalFilter = [];
+					console.log(angular.toJson(fil));
+
+					angular.forEach(fil, function(item) {
+						if(item.checked ){
+							console.log(angular.toJson(item));
+							internalFilter.push(item.name);
+						}
+					});
+					
+					if(internalFilter.length == 0)
+						return data;
+						
+					angular.forEach(data, function(item) {
+						angular.forEach(internalFilter, function(ifilter) {
+							if(item.name == ifilter)
+								subSetData.push(item);
+						});
+					});
+					
+					console.log(angular.toJson(subSetData));
+					return subSetData;
+				}
+				
+			
+			});
+			
+			/** Adding mock responses */
+			app.run(function($httpBackend) {
+				 $httpBackend.whenGET('http://localhost:8080/person').respond(function(method, url, data) {
+					var personResultByName = [
+						{name : "Mauricio"},
+						{name : "Mauricio1"},
+						{name : "David"},
+						{name : "Alex"}
+					];
+					return [200, personResultByName, {}];
+				 });
+			});
+		</script>
+	</head>
+
+	<body ng-controller="defaultCtrl">							
+					
+					
+		<div id="todoPanel" class="panel" >
+		<table class="table">
+		  <thead>
+			   <tr>
+					<th>Index</th>
+					<th>
+						<div class="btn-group">
+						<a class="btn dropdown-toggle" data-toggle="dropdown" href="#">             
+						+
+						</a>
+						<ul class="dropdown-menu">
+							<li ng-repeat = "nameHeader in nameHeaderValues"  >
+								<input type="checkbox" ng-model="nameHeader.checked" ng-checked="nameHeader.checked"/> 
+								{{nameHeader.name}}
+							</li>
+						</ul>
+					  </div>
+					   Name
+					</th> 
+					<th>NickName</th>
+					<th>Description</th>
+					<th>NickName2</th>
+			   </tr>
+		  </thead>	 
+		  <tbody>
+			   <tr ng-repeat = "person in data | selectedCustomName:nameHeaderValues" >
+					<td>{{$index}}</td>
+					<td>{{person.name}}</td>
+					<td><span ng-bind="person.nick"></span></td>
+					<td><span ng-bind="person.description"></span></td>
+					<td><span>{{person.nick2}}</span></td>
+				</tr>
+		  </tbody>
+		</table>
+		</div>
+
+	</body>
+</html>

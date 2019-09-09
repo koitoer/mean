@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html ng-app="exampleApp">
+	<head>
+		<title>Forms</title>
+		<script src="angular.js"></script>
+		<script>
+			var app = angular.module("exampleApp", []).controller("defaultCtrl", function ($scope) {
+
+			$scope.data = [
+					{name : "Mauricio", nick : "koitoer", description : "desc1"},
+					{name : "Mauricio", nick : "shipto", description : "desc1"}
+				 ];
+				 
+			}).directive("editableRow", function () {
+				return{
+				    
+					scope : true,
+					
+					link: function (scope, elem, attrs) {
+						console.log("Adding directive");
+						
+						var editButton = angular.element(elem[0].querySelector('.edit-button'));
+						var cancelButton = angular.element(elem[0].querySelector('.cancel-button'));
+						var saveButton = angular.element(elem[0].querySelector('.save-button'));
+						
+						editButton.on("click", function (e) {
+							console.log("Click in Edit")
+							var childs = elem.children();
+							for (var i = 1; i < childs.length - 1; i++){
+								console.log(childs[i]);
+								 if(angular.element(childs[i]).hasClass("editable-text")){
+									console.log("Editable-text");
+									angular.element(angular.element(childs[i]).children()).addClass("hidden");
+									angular.element(childs[i]).append('<input type="text" ng-model="input.value"/>');
+									
+									cancelButton.removeClass("hidden");
+									cancelButton.addClass("visible");
+									saveButton.removeClass("hidden");
+									saveButton.addClass("visible");
+									
+									$(this).addClass("hidden");
+								 }
+							}
+						});
+						
+						
+						cancelButton.on("click", function (e) {
+							console.log("Click in Cancel")
+							var childs = elem.children();
+							for (var i = 1; i < childs.length - 1; i++){
+								 if(angular.element(childs[i]).hasClass("editable-text")){
+									console.log("Editable-text");
+									angular.element(angular.element(childs[i]).children()).removeClass("hidden");
+									angular.element(angular.element(childs[i]).children()).addClass("visible");
+									
+									
+									editButton.removeClass("hidden");
+									editButton.addClass("visible");
+									saveButton.removeClass("visible");
+									saveButton.addClass("hidden");
+									$(this).addClass("hidden");
+								 }
+							}
+						});
+						
+						
+						saveButton.on("click", function (e) {
+							console.log("Click in Save")
+							console.log(scope.input.value);
+							
+							
+							editButton.removeClass("visible");
+							editButton.addClass("hidden");
+							cancelButton.removeClass("visible");
+							cancelButton.addClass("hidden");
+							$(this).addClass("hidden");
+							
+						});
+						
+					}
+				}
+			});
+		</script>
+	</head>
+
+	<body>
+		<div id="todoPanel" class="panel" ng-controller="defaultCtrl">
+			<table class="table">
+		  <thead>
+			   <tr>
+					<th>Index</th>
+					<th>Name</th>
+					<th>NickName</th>
+					<th>Description</th>
+					<th>edit</th>
+					<th>save</th>
+			   </tr>
+		  </thead>	 
+		  <tbody>
+			   <tr editable-row ng-repeat = "person in data">
+					<td>{{$index}}</td>
+					<td>{{person.name}}</td>
+					<td class = "editable-text"><span>{{person.nick}}</span></td>
+					<td editable-textArea>{{person.description}}</td>
+					<td>
+						<button type="button" class="btn btn-primary edit-button">Edit</button>
+						<button type="button" class="btn btn-danger cancel-button hidden">Cancel</button>
+					</td>
+					<td>
+						<button type="button" class="btn btn-success save-button hidden">Save</button>
+					</td>
+				</tr>
+		  </tbody>
+		</table>
+		</div>
+		
+		
+
+
+	</body>
+</html>

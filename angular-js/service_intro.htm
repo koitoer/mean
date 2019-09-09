@@ -1,0 +1,189 @@
+		<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.3.14/angular-mocks.js"></script>
+
+<html ng-app="myApp">
+    <div ng-controller="myController">
+        <button ng-click="load()">Click to load</button>
+        <button ng-click="loadFromService()">Click to load from service</button>
+        <button ng-click="solutionFromService()">Solution1</button>
+        <button ng-click="solution2fromService()">Solution2</button>
+         <button ng-click="loadOnError()">Load on error</button>
+        <button ng-click="loadOnErrorfromService()">Load on error from ser</button>
+            <br>
+            {{myVar}}
+            <br>
+            DATA: {{data2}}
+            <br>
+            Was invalid {{invalid}}
+            <br>
+            Source {{source}}
+    </div>
+</html>
+
+
+
+(function () {
+    'use strict';
+
+    var myApp = angular.module('myApp',['ngMockE2E']);
+    
+    /** Adding mock responses */
+	myApp.run(function($httpBackend) {			 $httpBackend.whenGET('http://localhost:8080/person').respond(function(method, url, data) {
+					var people = [
+					{id : 0, name : "Mauricio1", nick : "koitoer", description : "desc1", nick2 : "reotiok", date :  "01/01/2015"},
+					{id : 1, name : "Mauricio", nick : "shipto", description : "desc1", nick2 : "reotipk", date :  "01/02/2015"}
+				 ];
+					console.log("This is received by the service " + angular.toJson(people));
+					return [200, people];
+				 });
+                                      
+              $httpBackend.whenGET('http://localhost:8080/personBAD').respond(function(method, url, data) {
+				
+					console.log("Error indata");
+					return [400];
+				 });
+                                      
+			});
+    
+    
+    myApp.controller('myController', function($scope, $http, myService){
+
+        $scope.invalid = "No call yet";
+        $scope.myVar = "var";
+        
+        //Implementation from the controller, I guess this is not ideal
+        //as I have highly coupled the logic for the service in the controller.
+        $scope.load = function(){
+            $http.get('http://localhost:8080/person').then(function(response){
+                $scope.data2 = response.data;
+                $scope.invalid = false;
+                $scope.source = "Controller";
+            }, function(response2){
+                $scope.invalid = true;
+                $scope.source = "Controller";
+            });
+        }
+        
+        $scope.loadOnError = function(){
+            $http.get('http://localhost:8080/personBAD').then(function(response){
+                $scope.data2 = response.data;
+                $scope.invalid = false;
+                $scope.source = "Controller";
+            }, function(response2){
+                $scope.invalid = true;
+                $scope.source = "Controller BAD";
+            });
+        }
+        
+        
+        //Using a service how this implementation should be ??
+        $scope.loadFromService = function(){
+        		myService.loadFromService($scope.source, $scope.data2);
+            $scope.data2[0].name = "Old name";
+        }
+        
+        $scope.solutionFromService = function(){
+            
+            myService.solutionFromService().then(function(data) {
+                 $scope.data2 = data;
+                 $scope.invalid = false;
+                 $scope.source = "Service";
+            }, function(data){
+                 $scope.invalid = true;
+                 $scope.source = "Service";
+            });
+            
+        }
+        
+      
+        
+        $scope.solution2fromService = function(){
+        	myService.solution2fromService().then(function(res){
+            		$scope.data2 = res;
+            });
+            $scope.source = "Service2";
+        }
+        
+        $scope.loadOnErrorfromService = function(){
+        	myService.loadOnErrorfromService().then(function(res){
+                
+            	}, function(res){
+                    $scope.invalid = true;
+                    $scope.source = "Service BAD";
+            	});
+            
+        }
+        
+        
+    });
+    
+    // Define the factory on the module.
+    // Inject the dependencies.
+    // Point to the factory definition function.
+    myApp.service('myService', ['$http', '$q',myService]);
+
+    // service definition goes here
+    function myService($http){
+
+        //#region Internal Properties
+
+        //#endregion
+
+        //#region Internal Methods
+		function loadFromService(source, data2){
+        	//Call from the service
+            alert(source);
+            alert(data2);
+            data2[0] = {}
+            data2[1].name = "NEw name";
+            data2 = {};
+            source = "service";
+            console.log("Service call");
+        }
+        //#endregion
+        
+        
+        function solutionFromService(){
+           return $http.get('http://localhost:8080/person').then(function(response){
+           		return response.data;
+           });
+        }
+        
+        function loadOnErrorfromService(){
+          return $http.get('http://localhost:8080/personBAD').then(function(response){
+           		return response.data;
+           });
+        }
+
+        function solution2fromService(){
+            var httpResponse =  undefined;
+            var  promise1 = $http.get('http://localhost:8080/person').then(function(response){
+           		httpResponse =  response.data;
+                httpResponse[0].name = "solution2fromService";
+           });
+            
+            var p = promise1.then(function(){
+            	console.log("hello2");
+                httpResponse[0].name = "solution2fromService22";
+                return httpResponse;
+            });
+            
+            
+            console.log("_No wait " + httpResponse);
+            return p;
+            //return httpResponse;
+            
+        }
+
+        // Define the functions and properties to reveal.
+        var service = {
+            loadFromService:loadFromService,
+            solutionFromService:solutionFromService,
+            solution2fromService:solution2fromService,
+            loadOnErrorfromService:loadOnErrorfromService
+            
+        };
+
+        return service;
+    }
+
+})();
